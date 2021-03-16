@@ -45,6 +45,8 @@
 #include "cutlass/util/distribution.h"
 #include "tensor_foreach.h"
 
+#include "cutlass/quaternion.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace cutlass {
@@ -509,6 +511,31 @@ void TensorFillRandomUniform(
   TensorFillRandomUniform(dst.view_real(), seed, max, min, bits);
   TensorFillRandomUniform(dst.view_imag(), ~seed, max, min, bits);
 }
+
+
+/// Fills a tensor with random values with a uniform random distribution. FOR QUATERNION
+template <
+  typename Element,               ///< Element type
+  typename Layout>                ///< Layout function
+void TensorFillRandomUniform(
+  TensorView<cutlass::Quaternion<Element>, Layout> dst,        ///< destination tensor
+  uint64_t seed,                                       ///< seed for RNG
+  cutlass::Quaternion<Element> max,                                      ///< upper bound of distribution
+  cutlass::Quaternion<Element> min,                                      ///< lower bound for distribution
+  int bits = -1) {                                     ///< If non-negative, specifies number of fractional bits that
+                                                       ///  are not truncated to zero. Permits reducing precision of
+                                                       ///  data.
+  detail::RandomUniformFunc<Element> random_func_r(seed,   max.w(), min.w(), bits);
+  detail::RandomUniformFunc<Element> random_func_k(seed+1, max.z(), min.z(), bits);
+  detail::RandomUniformFunc<Element> random_func_j(seed+2, max.y(), min.y(), bits);
+  detail::RandomUniformFunc<Element> random_func_i(seed+3, max.x(), min.x(), bits);
+
+  for (size_t i = 0; i < dst.size(); ++i) {
+    ReferenceFactory<cutlass::Quaternion<Element>>::get(dst.ref().data(), i) = cutlass::Quaternion<Element>(random_func_k(),random_func_j(),random_func_i(),random_func_r());
+  }
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// Fills a tensor with random values with a uniform random distribution.

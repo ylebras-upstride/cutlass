@@ -85,7 +85,7 @@ public:
   /// Constructs a quaternion
   CUTLASS_HOST_DEVICE
   Quaternion(
-    Element w_ = Element(1)
+    Element w_ = Element(0)
   ) {
     Base::at(kX) = Element(0);
     Base::at(kY) = Element(0);
@@ -255,7 +255,6 @@ public:
   }
 
   /// In-place multiplication
-  template <typename T>
   CUTLASS_HOST_DEVICE
   Quaternion<Element> &operator*=(Quaternion<Element> const &rhs) {
     *this = (*this * rhs);
@@ -606,6 +605,12 @@ Matrix3x1<Element> spinor_rotation_inv(
 template <typename Element>
 std::ostream &operator<<(std::ostream &out, Quaternion<Element> const &q) {
   return out << q.w() << "+i" << q.x() << "+j" << q.y() << "+k" << q.z();
+}
+
+
+template <typename Element>
+std::istream &operator>>(std::istream &in, Quaternion<Element> &q) {
+  return in >> q.w() >> q.x() >> q.y() >> q.z();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
