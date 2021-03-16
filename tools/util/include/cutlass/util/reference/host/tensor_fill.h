@@ -75,7 +75,7 @@ struct TensorFillFunc {
   //
 
   TensorFillFunc(
-    TensorView const &view_ = TensorView(), 
+    TensorView const &view_ = TensorView(),
     Element value_ = Element(0)
   ): view(view_), value(value_) { }
 
@@ -93,7 +93,7 @@ template <
   typename Element,               ///< Element type
   typename Layout>                ///< Layout function
 void TensorFill(
-  TensorView<Element, Layout> dst,    ///< destination tensor 
+  TensorView<Element, Layout> dst,    ///< destination tensor
   Element val = Element(0)) {               ///< value to uniformly fill it with
 
   detail::TensorFillFunc<Element, Layout> func(dst, val);
@@ -109,7 +109,7 @@ template <
   typename Element,                                                   ///< Element type
   typename Layout>                                                    ///< Layout function
 void TensorFill(
-  TensorViewPlanarComplex<Element, Layout> dst,                       ///< destination tensor 
+  TensorViewPlanarComplex<Element, Layout> dst,                       ///< destination tensor
   cutlass::complex<Element> val = cutlass::complex<Element>(0)) {     ///< value to uniformly fill it with
 
   TensorFill(dst.view_real(), val.real());
@@ -134,8 +134,8 @@ struct RandomGaussianFunc {
   // Methods
   //
   RandomGaussianFunc(
-    uint64_t seed_ = 0, 
-    double mean_ = 0, 
+    uint64_t seed_ = 0,
+    double mean_ = 0,
     double stddev_ = 1,
     int int_scale_ = -1
   ):
@@ -183,8 +183,8 @@ struct RandomGaussianFunc<complex<Element> > {
   // Methods
   //
   RandomGaussianFunc(
-    uint64_t seed_ = 0, 
-    double mean_ = 0, 
+    uint64_t seed_ = 0,
+    double mean_ = 0,
     double stddev_ = 1,
     int int_scale_ = -1
   ):
@@ -266,10 +266,10 @@ void TensorFillRandomGaussian(
   uint64_t seed,                          ///< seed for RNG
   double mean = 0,                        ///< Gaussian distribution's mean
   double stddev = 1,                      ///< Gaussian distribution's standard deviation
-  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that
                                           ///  are not truncated to zero. Permits reducing precision of
                                           ///  data.
-  
+
   detail::RandomGaussianFunc<Element> random_func(seed, mean, stddev, bits);
 
   detail::TensorFillGaussianFunc<Element, Layout> func(
@@ -292,10 +292,10 @@ void TensorFillRandomGaussian(
   uint64_t seed,                                       ///< seed for RNG
   double mean = 0,                                     ///< Gaussian distribution's mean
   double stddev = 1,                                   ///< Gaussian distribution's standard deviation
-  int bits = -1) {                                     ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                                     ///< If non-negative, specifies number of fractional bits that
                                                        ///  are not truncated to zero. Permits reducing precision of
                                                        ///  data.
-  
+
   TensorFillRandomGaussian(dst.view_real(), seed, mean, stddev, bits);
   TensorFillRandomGaussian(dst.view_imag(), ~seed, mean, stddev, bits);
 }
@@ -311,10 +311,10 @@ void BlockFillRandomGaussian(
   uint64_t seed,                          ///< seed for RNG
   double mean = 0,                        ///< Gaussian distribution's mean
   double stddev = 1,                      ///< Gaussian distribution's standard deviation
-  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that
                                           ///  are not truncated to zero. Permits reducing precision of
                                           ///  data.
-  
+
 
   detail::RandomGaussianFunc<Element> random_func(seed, mean, stddev, bits);
 
@@ -333,7 +333,7 @@ template <typename Element>
 struct RandomUniformFunc {
 
   using Real = typename RealType<Element>::Type;
-  
+
   uint64_t seed;
   double range;
   double min;
@@ -344,7 +344,7 @@ struct RandomUniformFunc {
   //
 
   RandomUniformFunc(
-    uint64_t seed_ = 0, 
+    uint64_t seed_ = 0,
     double max = 1,
     double min_ = 0,
     int int_scale_ = -1
@@ -364,7 +364,7 @@ struct RandomUniformFunc {
     // Random values are cast to integer after scaling by a power of two to facilitate error
     // testing
     Element result;
-    
+
     if (int_scale >= 0) {
       rnd = double(int64_t(rnd * double(1 << int_scale))) / double(1 << int_scale);
       result = static_cast<Element>(Real(rnd));
@@ -382,7 +382,7 @@ template <typename Element>
 struct RandomUniformFunc<complex<Element> > {
 
   using Real = typename RealType<Element>::Type;
-  
+
   uint64_t seed;
   double range;
   double min;
@@ -393,7 +393,7 @@ struct RandomUniformFunc<complex<Element> > {
   //
 
   RandomUniformFunc(
-    uint64_t seed_ = 0, 
+    uint64_t seed_ = 0,
     double max = 1,
     double min_ = 0,
     int int_scale_ = -1
@@ -415,7 +415,7 @@ struct RandomUniformFunc<complex<Element> > {
 
       // Random values are cast to integer after scaling by a power of two to facilitate error
       // testing
-      
+
       if (int_scale >= 0) {
         rnd = double(int(rnd * double(1 << int_scale)));
         reals[i] = from_real<Element>(Real(rnd / double(1 << int_scale)));
@@ -477,9 +477,9 @@ void TensorFillRandomUniform(
   uint64_t seed,                          ///< seed for RNG
   double max = 1,                         ///< upper bound of distribution
   double min = 0,                         ///< lower bound for distribution
-  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that
                                           ///  are not truncated to zero. Permits reducing precision of
-                                          ///  data.                 
+                                          ///  data.
   detail::RandomUniformFunc<Element> random_func(seed, max, min, bits);
 
   detail::TensorFillRandomUniformFunc<Element, Layout> func(
@@ -502,10 +502,10 @@ void TensorFillRandomUniform(
   uint64_t seed,                                       ///< seed for RNG
   double max = 1,                                      ///< upper bound of distribution
   double min = 0,                                      ///< lower bound for distribution
-  int bits = -1) {                                     ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                                     ///< If non-negative, specifies number of fractional bits that
                                                        ///  are not truncated to zero. Permits reducing precision of
-                                                       ///  data.                 
-  
+                                                       ///  data.
+
   TensorFillRandomUniform(dst.view_real(), seed, max, min, bits);
   TensorFillRandomUniform(dst.view_imag(), ~seed, max, min, bits);
 }
@@ -521,9 +521,9 @@ void BlockFillRandomUniform(
   uint64_t seed,                          ///< seed for RNG
   double max = 1,                         ///< upper bound of distribution
   double min = 0,                         ///< lower bound for distribution
-  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that 
+  int bits = -1) {                        ///< If non-negative, specifies number of fractional bits that
                                           ///  are not truncated to zero. Permits reducing precision of
-                                          ///  data.                 
+                                          ///  data.
   detail::RandomUniformFunc<Element> random_func(seed, max, min, bits);
 
   for (size_t i = 0; i < capacity; ++i) {
@@ -563,7 +563,7 @@ struct TensorFillDiagonalFunc {
 
   void operator()(Coord<Layout::kRank> const & coord) const {
     bool is_diag = true;
-    
+
     CUTLASS_PRAGMA_UNROLL
     for (int i = 1; i < Layout::kRank; ++i) {
       if (coord[i] != coord[i - 1]) {
@@ -664,7 +664,7 @@ struct TensorUpdateOffDiagonalFunc {
 
   void operator()(Coord<Layout::kRank> const & coord) const {
     bool is_diag = true;
-    
+
     CUTLASS_PRAGMA_UNROLL
     for (int i = 1; i < Layout::kRank; ++i) {
       if (coord[i] != coord[i - 1]) {
@@ -726,7 +726,7 @@ struct TensorFillLinearFunc {
   //
   // Methods
   //
-  
+
   TensorFillLinearFunc() { }
 
   /// Constructs functor
@@ -739,7 +739,7 @@ struct TensorFillLinearFunc {
 
   /// Updates the tensor
   void operator()(Coord<Layout::kRank> const & coord) const {
-    
+
     Element sum(s);
 
     CUTLASS_PRAGMA_UNROLL
@@ -857,20 +857,20 @@ void BlockFillRandom(
 
   if (dist.kind == Distribution::Gaussian) {
     BlockFillRandomGaussian<Element>(
-      ptr, 
-      capacity, 
-      seed, 
-      dist.gaussian.mean, 
-      dist.gaussian.stddev, 
+      ptr,
+      capacity,
+      seed,
+      dist.gaussian.mean,
+      dist.gaussian.stddev,
       dist.int_scale);
   }
   else if (dist.kind == Distribution::Uniform) {
     BlockFillRandomUniform<Element>(
-      ptr, 
-      capacity, 
-      seed, 
+      ptr,
+      capacity,
+      seed,
       dist.uniform.max,
-      dist.uniform.min, 
+      dist.uniform.min,
       dist.int_scale);
   }
 }
@@ -882,7 +882,7 @@ namespace detail {
 
 template <typename Element>
 struct RandomSparseMetaFunc {
-  
+
   uint64_t seed;
   double range;
   int MetaSizeInBits;
@@ -892,7 +892,7 @@ struct RandomSparseMetaFunc {
   //
 
   RandomSparseMetaFunc(
-    uint64_t seed_ = 0, 
+    uint64_t seed_ = 0,
     int MetaSizeInBits_ = 2
   ):
     seed(seed_), MetaSizeInBits(MetaSizeInBits_) {
@@ -1016,7 +1016,7 @@ void TensorCopyDiagonalIn(
   Element const *ptr) {                     ///< dense buffer of elements
 
   typename Layout::Index extent = dst.extent().min();
-  
+
   for (typename Layout::Index i = 0; i < extent; ++i) {
     Coord<Layout::kRank> coord(i);
     dst.at(coord) = ReferenceFactory<Element>::get(ptr, i);
@@ -1035,7 +1035,7 @@ void TensorCopyDiagonalOut(
   TensorView<Element, Layout> src) {          ///< source tensor
 
   typename Layout::Index extent = src.extent().min();
-  
+
   for (typename Layout::Index i = 0; i < extent; ++i) {
     Coord<Layout::kRank> coord(i);
     ReferenceFactory<Element>::get(ptr, i) = src.at(coord);

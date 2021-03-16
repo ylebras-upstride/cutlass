@@ -79,4 +79,3 @@ TEST(SM50_Device_Conv2d_Fprop_Analytic_ImplicitGemm_f32nhwc_f32nhwc_f32nhwc_simt
   EXPECT_TRUE(test::conv::device::TestAllConv2d<Conv2dFprop>());
 
 }
-

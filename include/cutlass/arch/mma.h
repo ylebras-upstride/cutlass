@@ -198,8 +198,8 @@ struct SparseMma;
 #include "cutlass/arch/mma_sm50.h"
 #include "cutlass/arch/mma_sm60.h"
 #include "cutlass/arch/mma_sm61.h"
-#include "cutlass/arch/mma_sm70.h" 
-#include "cutlass/arch/mma_sm75.h" 
+#include "cutlass/arch/mma_sm70.h"
+#include "cutlass/arch/mma_sm75.h"
 #include "cutlass/arch/mma_sm80.h"
 #include "cutlass/arch/mma_sparse_sm80.h"
 /////////////////////////////////////////////////////////////////////////////////////////////////

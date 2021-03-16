@@ -185,7 +185,6 @@ public:
       cudaError_t result = cudaFuncSetAttribute(cutlass::Kernel<ImplicitGemmKernel>,
                                     cudaFuncAttributeMaxDynamicSharedMemorySize,
                                     smem_size);
-
       if (result != cudaSuccess) {
         return Status::kErrorInternal;
       }

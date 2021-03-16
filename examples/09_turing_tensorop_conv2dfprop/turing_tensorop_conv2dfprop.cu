@@ -50,14 +50,14 @@ output of convolution.
 First, we setup the data types of the input tensor A, weights' tensor B and output tensor C along
 with alpha, beta as the equation for convolution is C = alpha * Conv(A, B) + beta * C. In CUTLASS,
 the kernels first compute Conv(A, B) and leave the rest of the computation to end of the kernel as
-alpha * X + beta * C is a simple element-wise operation on X (Conv(A, B)) and C. We call this as 
-epilogue of kernel. Hence, we setup data types for alpha and beta to be equal to 
+alpha * X + beta * C is a simple element-wise operation on X (Conv(A, B)) and C. We call this as
+epilogue of kernel. Hence, we setup data types for alpha and beta to be equal to
 ElementComputeEpilogue = float. We want to use MMA instructions on Turing and they support 4-bit
 signed integer. But int4b_t is not fully supported by Nvidia software stack, so CUTLASS introduces
 cutlass::int4b_t. We use the data type for elements in input tensor A and B as cutlass::int4b_t. We
 convey this to CUTLASS kernel by initializing template variables ElementAccumulator (int32_t),
 ElementComputeEpilogue (float), ElementInputA (cutlass::int4b_t), ElementInputB (cutlass::int4b_t),
-ElementOutput (int32_t). Communicating just the data type is not enough. As the data is laid out 
+ElementOutput (int32_t). Communicating just the data type is not enough. As the data is laid out
 linearly in memory, we have to convey the layout of tensors. We do that by initializing template
 variables LayoutInputA, LayoutInputB and LayoutOutput to TensorNHWC cutlass variable. Next, we setup
 rules to comptue alpha * X + beta * C which is called epilogue of the kernel. We initialize template
@@ -307,11 +307,11 @@ struct Options {
     cmd.get_cmd_line_argument("k", filter_size.n());
     cmd.get_cmd_line_argument("r", filter_size.h());
     cmd.get_cmd_line_argument("s", filter_size.w());
-    filter_size.c() = input_size.c(); 
+    filter_size.c() = input_size.c();
 
     cmd.get_cmd_line_argument("alpha", alpha);
     cmd.get_cmd_line_argument("beta", beta);
-    
+
     cmd.get_cmd_line_argument("iterations", iterations);
     cmd.get_cmd_line_argument("tag", tag);
 
@@ -355,7 +355,7 @@ struct Options {
 
     return out;
   }
-  
+
   /// Computes the output tensor size (NPQK)
   cutlass::Tensor4DCoord output_size() const {
     return cutlass::Tensor4DCoord(
@@ -370,7 +370,7 @@ struct Options {
 
     // Number of multiply-adds = NPQK * CRS
     int64_t fmas = output_size().product() * int64_t(filter_size.h() * filter_size.w() * filter_size.c());
-    
+
     // Two flops per multiply-add
     return 2.0 * double(fmas) / double(1.0e9) / runtime_s;
   }
@@ -385,8 +385,8 @@ struct Result {
   cutlass::Status reference_check;
   cudaError_t error;
 
-  Result(): 
-    runtime_ms(0), 
+  Result():
+    runtime_ms(0),
     gflops(0),
     status(cutlass::Status::kSuccess),
     reference_check(cutlass::Status::kInvalid),
@@ -409,7 +409,7 @@ struct Result {
       out << options.tag << ",";
     }
 
-    out 
+    out
       << "conv_" << idx << ","
       << options.input_size.n() << ","
       << options.input_size.h() << ","
@@ -486,7 +486,7 @@ Result profile_convolution(Options const &options) {
   int split_k_slices = 1;
 
   // Construct Conv2dProblemSize with user defined output size
-  cutlass::conv::Conv2dProblemSize problem_size(      
+  cutlass::conv::Conv2dProblemSize problem_size(
       options.input_size,
       options.filter_size,
       options.padding,
@@ -496,7 +496,7 @@ Result profile_convolution(Options const &options) {
       mode,
       split_k_slices);
 
-  // Construct ImplicitGemm::Argument structure with conv2d 
+  // Construct ImplicitGemm::Argument structure with conv2d
   // problem size, data pointers, and epilogue values
   typename ImplicitGemm::Arguments arguments{
     problem_size,
@@ -534,7 +534,7 @@ Result profile_convolution(Options const &options) {
   //
   // Optional reference check
   //
-  
+
   if (options.reference_check) {
     std::cout << "Verification on host...\n";
 
@@ -584,14 +584,14 @@ Result profile_convolution(Options const &options) {
     std::stringstream ss;
 
     ss << "09_tensor_conv_workspace_conv2dfprop_"
-      << options.input_size.n() << "x" << options.input_size.h() << "x" << options.input_size.w() << "x" << options.input_size.c() 
+      << options.input_size.n() << "x" << options.input_size.h() << "x" << options.input_size.w() << "x" << options.input_size.c()
       << "_"
-      << options.filter_size.n() << "x" << options.filter_size.h() << "x" << options.filter_size.w() << "x" << options.filter_size.c() 
+      << options.filter_size.n() << "x" << options.filter_size.h() << "x" << options.filter_size.w() << "x" << options.filter_size.c()
       << ".dat";
 
     std::ofstream output_workspace(ss.str());
 
-    output_workspace 
+    output_workspace
       << "Input = \n" << tensor_a.host_view() << "\n\n"
       << "Filters = \n" << tensor_b.host_view() << "\n\n";
 
@@ -603,7 +603,7 @@ Result profile_convolution(Options const &options) {
 
     std::cout << "Results written to '" << ss.str() << "'." << std::endl;
   }
-  
+
   //
   // Performance measurement
   //
@@ -611,7 +611,7 @@ Result profile_convolution(Options const &options) {
   if (options.measure_performance) {
 
     cudaEvent_t events[2];
-    
+
     for (auto & event : events) {
       result.error = cudaEventCreate(&event);
       if (result.error != cudaSuccess) {
@@ -690,7 +690,7 @@ int main(int argc, char const **args) {
   }
 
   Options options;
-  
+
   options.parse(argc, args);
 
   if (options.help) {
