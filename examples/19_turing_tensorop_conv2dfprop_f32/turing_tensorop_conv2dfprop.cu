@@ -159,10 +159,10 @@ using MMAOp = cutlass::arch::OpClassSimt;
 using SmArch = cutlass::arch::Sm75;
 
 // This code section describes the tile size a thread block will compute
-using ThreadblockShape = cutlass::gemm::GemmShape<32, 32, 2>;  // Threadblock tile shape
+using ThreadblockShape = cutlass::gemm::GemmShape<128, 128, 8>;  // Threadblock tile shape
 
 // This code section describes tile size a warp will compute
-using WarpShape = cutlass::gemm::GemmShape<32, 32, 2>;         // Warp tile shape
+using WarpShape = cutlass::gemm::GemmShape<64, 64, 8>;         // Warp tile shape
 
 // This code section describes the size of MMA op
 using InstructionShape = cutlass::gemm::GemmShape<1, 1, 1>;    // TensorCore instruction shape
@@ -331,8 +331,8 @@ struct Options {
   /// Prints the usage statement.
   std::ostream & print_usage(std::ostream &out) const {
 
-    out << "09_turing_tensorop_conv2dfprop example\n\n"
-      << "  This example uses Turing's Tensor Core operators on int4 data types to compute\n"
+    out << "19_turing_tensorop_conv2dfprop_f32 example\n\n"
+      << "  This example uses Turing's Tensor Core operators on float data types to compute\n"
       << "  forward convolution on tensors of layout NHWC.\n\n"
       << "Options:\n\n"
       << "  --help               If specified, displays this usage statement.\n\n"
@@ -353,8 +353,8 @@ struct Options {
       << "  --tag <string>       String to replicate across the first column in the results table\n";
 
     out << "\n\nExamples:\n\n"
-      << "$ ./examples/09_turing_tensorop_conv2dfprop/09_turing_tensorop_conv2dfprop  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
-      << "$ ./examples/09_turing_tensorop_conv2dfprop/09_turing_tensorop_conv2dfprop  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
+      << "$ ./examples/19_turing_tensorop_conv2dfprop_f32/19_turing_tensorop_conv2dfprop_f32  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
+      << "$ ./examples/19_turing_tensorop_conv2dfprop_f32/19_turing_tensorop_conv2dfprop_f32  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
 
     return out;
   }
@@ -519,7 +519,7 @@ Result profile_convolution(Options const &options) {
   size_t workspace_size = implicit_gemm_op.get_workspace_size(arguments);
 
   // Allocate workspace memory
-  cutlass::device_memory::allocation<float> workspace(workspace_size);
+  cutlass::device_memory::allocation<uint8_t> workspace(workspace_size);
 
   result.status = implicit_gemm_op.can_implement(arguments);
   CUTLASS_CHECK(result.status);
@@ -586,7 +586,7 @@ Result profile_convolution(Options const &options) {
 
     std::stringstream ss;
 
-    ss << "09_tensor_conv_workspace_conv2dfprop_"
+    ss << "19_tensor_conv_workspace_conv2dfprop_f32_"
       << options.input_size.n() << "x" << options.input_size.h() << "x" << options.input_size.w() << "x" << options.input_size.c() 
       << "_"
       << options.filter_size.n() << "x" << options.filter_size.h() << "x" << options.filter_size.w() << "x" << options.filter_size.c() 
