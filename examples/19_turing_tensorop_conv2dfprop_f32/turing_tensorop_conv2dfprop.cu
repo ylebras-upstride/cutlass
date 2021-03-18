@@ -159,10 +159,10 @@ using MMAOp = cutlass::arch::OpClassSimt;
 using SmArch = cutlass::arch::Sm75;
 
 // This code section describes the tile size a thread block will compute
-using ThreadblockShape = cutlass::gemm::GemmShape<128, 128, 8>;  // Threadblock tile shape
+using ThreadblockShape = cutlass::gemm::GemmShape<32, 32, 2>;  // Threadblock tile shape
 
 // This code section describes tile size a warp will compute
-using WarpShape = cutlass::gemm::GemmShape<64, 64, 8>;         // Warp tile shape
+using WarpShape = cutlass::gemm::GemmShape<32, 32, 2>;         // Warp tile shape
 
 // This code section describes the size of MMA op
 using InstructionShape = cutlass::gemm::GemmShape<1, 1, 1>;    // TensorCore instruction shape
@@ -519,7 +519,7 @@ Result profile_convolution(Options const &options) {
   size_t workspace_size = implicit_gemm_op.get_workspace_size(arguments);
 
   // Allocate workspace memory
-  cutlass::device_memory::allocation<uint8_t> workspace(workspace_size);
+  cutlass::device_memory::allocation<float> workspace(workspace_size);
 
   result.status = implicit_gemm_op.can_implement(arguments);
   CUTLASS_CHECK(result.status);
