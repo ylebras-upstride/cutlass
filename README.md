@@ -1,3 +1,7 @@
+Welcome to the fork of CUTLASS (https://github.com/NVIDIA/cutlass) by Upstride.
+The main focus of this fork is to make cutlass::Quaternion class work and add new tests/examples with float32 and quaternions.
+
+
 ![ALT](/media/images/gemm-hierarchy-with-epilogue-no-labels.png "Complete CUDA GEMM decomposition")
 
 # CUTLASS 2.5
