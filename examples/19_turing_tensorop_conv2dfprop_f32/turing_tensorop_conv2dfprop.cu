@@ -40,7 +40,7 @@ using MMAOp = cutlass::arch::OpClassSimt;
 using SmArch = cutlass::arch::Sm75;
 
 // This code section describes the tile size a thread block will compute
-using ThreadblockShape = cutlass::gemm::GemmShape<128, 128, 8>;  // Threadblock tile shape
+using ThreadblockShape = cutlass::gemm::GemmShape<64, 64, 8>;  // Threadblock tile shape
 
 // This code section describes tile size a warp will compute
 using WarpShape = cutlass::gemm::GemmShape<64, 64, 8>;         // Warp tile shape
