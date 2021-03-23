@@ -192,8 +192,8 @@ struct Options {
     // Number of multiply-adds = NPQK * CRS
     int64_t fmas = outputShape().product() * int64_t(filterShape.h() * filterShape.w() * filterShape.c());
 
-    // Two flops per multiply-add
-    return 2.0 * double(fmas) / double(1.0e9) / runtime_s;
+    // Sixteen operation per quaternion multiplication and two flops per multiply-add
+    return 16.0 * 2.0 * double(fmas) / double(1.0e9) / runtime_s;
   }
 };
 
