@@ -22,7 +22,7 @@
 
 
 cutlass_example_add_executable(
-  18_turing_tensorop_conv2dfprop_quat
-  turing_tensorop_conv2dfprop.cu
+  18_turing_simt_conv2dfprop
+  turing_simt_conv2dfprop.cu
   )
 

@@ -148,7 +148,7 @@ struct Options {
   /// Prints the usage statement.
   std::ostream & print_usage(std::ostream &out) const {
 
-    out << "20_conv2d_fprop_quat example\n\n"
+    out << "19_conv2d_fprop_quat example\n\n"
       << "  This example uses cutlass::Quaternion<float> to compute\n"
       << "  forward convolution on tensors of layout NHWC.\n\n"
       << "Options:\n\n"
@@ -170,8 +170,8 @@ struct Options {
       << "  --tag <string>       String to replicate across the first column in the results table\n";
 
     out << "\n\nExamples:\n\n"
-      << "$ ./examples/20_conv2d_fprop_quat/20_conv2d_fprop_quat  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
-      << "$ ./examples/20_conv2d_fprop_quat/20_conv2d_fprop_quat  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
+      << "$ ./examples/19_conv2d_fprop_quat/19_conv2d_fprop_quat  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
+      << "$ ./examples/19_conv2d_fprop_quat/19_conv2d_fprop_quat  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
 
     return out;
   }

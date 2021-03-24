@@ -20,68 +20,71 @@
 
 #include "helper.h"
 
-// The code section below describes datatype for input, output tensors and computation between
-// elements
-using DATA_TYPE = cutlass::Quaternion<float>; //float
-using ElementAccumulator = DATA_TYPE;                 // Data type of accumulator
-using ElementComputeEpilogue = DATA_TYPE;               // Data type of epilogue computation (alpha, beta)
-using ElementInputA = DATA_TYPE;             // Data type of elements in input tensor
-using ElementInputB = DATA_TYPE;             // Data type of elements in input tensor
-using ElementOutput = DATA_TYPE;             // Data type of elements in output tensor
+template<typename ElementType>
+struct Conv2DOp {
 
-using LayoutInputA = cutlass::layout::TensorNHWC;
-using LayoutInputB = cutlass::layout::TensorNHWC;
-using LayoutOutput = cutlass::layout::TensorNHWC;
+  // The code section below describes datatype for input, output tensors and computation between
+  // elements
+  using ElementAccumulator = ElementType;        // Data type of accumulator
+  using ElementComputeEpilogue = ElementType;    // Data type of epilogue computation (alpha, beta)
+  using ElementInputA = ElementType;             // Data type of elements in input tensor
+  using ElementInputB = ElementType;             // Data type of elements in input tensor
+  using ElementOutput = ElementType;             // Data type of elements in output tensor
 
-// This code section describes whether you want to use tensor cores or regular SIMT cores on GPU SM
-using MMAOp = cutlass::arch::OpClassSimt;
+  using LayoutInputA = cutlass::layout::TensorNHWC;
+  using LayoutInputB = cutlass::layout::TensorNHWC;
+  using LayoutOutput = cutlass::layout::TensorNHWC;
 
-// This code section describes CUDA SM architecture number
-using SmArch = cutlass::arch::Sm75;
+  // This code section describes whether you want to use tensor cores or regular SIMT cores on GPU SM
+  using MMAOp = cutlass::arch::OpClassSimt;
 
-// This code section describes the tile size a thread block will compute
-using ThreadblockShape = cutlass::gemm::GemmShape<64, 64, 8>;  // Threadblock tile shape
+  // This code section describes CUDA SM architecture number
+  using SmArch = cutlass::arch::Sm75;
 
-// This code section describes tile size a warp will compute
-using WarpShape = cutlass::gemm::GemmShape<64, 64, 8>;         // Warp tile shape
+  // This code section describes the tile size a thread block will compute
+  using ThreadblockShape = cutlass::gemm::GemmShape<64, 64, 8>;  // Threadblock tile shape
 
-// This code section describes the size of MMA op
-using InstructionShape = cutlass::gemm::GemmShape<1, 1, 1>;    // TensorCore instruction shape
+  // This code section describes tile size a warp will compute
+  using WarpShape = cutlass::gemm::GemmShape<64, 64, 8>;         // Warp tile shape
 
-// This code section describes how threadblocks are scheduled on GPU
-using SwizzleThreadBlock = cutlass::gemm::threadblock::GemmIdentityThreadblockSwizzle<>;
+  // This code section describes the size of MMA op
+  using InstructionShape = cutlass::gemm::GemmShape<1, 1, 1>;    // TensorCore instruction shape
 
-// Number of pipelines you want to use
-constexpr int NumStages = 2;
+  // This code section describes how threadblocks are scheduled on GPU
+  using SwizzleThreadBlock = cutlass::gemm::threadblock::GemmIdentityThreadblockSwizzle<>;
 
-// This code section describes the epilogue part of the kernel, we use default value
-using EpilogueOp = cutlass::epilogue::thread::LinearCombination<
-    ElementOutput,                                     // Data type of output matrix.
-    1,                                                 // The number of elements per vectorized.
-                                                       // memory access. This becomes the vector width of
-                                                       // math instructions in the epilogue too.
-    ElementAccumulator,                                // Data type of accumulator
-    ElementComputeEpilogue>;                           // Data type for alpha/beta in linear combination
+  // Number of pipelines you want to use
+  static const int NumStages = 2;
+
+  // This code section describes the epilogue part of the kernel, we use default value
+  using EpilogueOp = cutlass::epilogue::thread::LinearCombination<
+      ElementOutput,                                     // Data type of output matrix.
+      1,                                                 // The number of elements per vectorized.
+                                                        // memory access. This becomes the vector width of
+                                                        // math instructions in the epilogue too.
+      ElementAccumulator,                                // Data type of accumulator
+      ElementComputeEpilogue>;                           // Data type for alpha/beta in linear combination
 
 
-using Conv2dFpropKernel = typename cutlass::conv::kernel::DefaultConv2dFprop<
-  ElementInputA, LayoutInputA,
-  ElementInputB, LayoutInputB,
-  ElementOutput, LayoutOutput,
-  ElementAccumulator,
-  MMAOp,
-  SmArch,
-  ThreadblockShape,
-  WarpShape,
-  InstructionShape,
-  EpilogueOp,
-  SwizzleThreadBlock,
-  NumStages,
-  cutlass::arch::OpMultiplyAddSaturate,
-  cutlass::conv::IteratorAlgorithm::kAnalytic
->::Kernel;
+  using Conv2dFpropKernel = typename cutlass::conv::kernel::DefaultConv2dFprop<
+    ElementInputA, LayoutInputA,
+    ElementInputB, LayoutInputB,
+    ElementOutput, LayoutOutput,
+    ElementAccumulator,
+    MMAOp,
+    SmArch,
+    ThreadblockShape,
+    WarpShape,
+    InstructionShape,
+    EpilogueOp,
+    SwizzleThreadBlock,
+    NumStages,
+    cutlass::arch::OpMultiplyAddSaturate,
+    cutlass::conv::IteratorAlgorithm::kAnalytic
+  >::Kernel;
 
-using ImplicitGemm = cutlass::conv::device::ImplicitGemmConvolution<Conv2dFpropKernel>;
+  using ImplicitGemm = cutlass::conv::device::ImplicitGemmConvolution<Conv2dFpropKernel>;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,12 +98,13 @@ struct Options {
   cutlass::Tensor4DCoord padding;
   cutlass::MatrixCoord conv_stride;
   cutlass::MatrixCoord dilation;
+  bool use_quaternions;
   bool reference_check;
   bool measure_performance;
   int iterations;
   bool save_workspace;
-  ElementComputeEpilogue alpha;
-  ElementComputeEpilogue beta;
+  float alpha;
+  float beta;
   bool benchmark;
   std::string tag;
 
@@ -111,6 +115,7 @@ struct Options {
     padding(1, 1, 1, 1),
     conv_stride(1, 1),
     dilation(1, 1),
+    use_quaternions(false),
     reference_check(false),
     measure_performance(true),
     iterations(20),
@@ -183,6 +188,10 @@ struct Options {
       benchmark = true;
     }
 
+    if (cmd.check_cmd_line_flag("quat")) {
+      use_quaternions = true;
+    }
+
     cmd.get_cmd_line_argument("n", input_size.n());
     cmd.get_cmd_line_argument("h", input_size.h());
     cmd.get_cmd_line_argument("w", input_size.w());
@@ -212,9 +221,8 @@ struct Options {
   /// Prints the usage statement.
   std::ostream & print_usage(std::ostream &out) const {
 
-    out << "18_turing_tensorop_conv2dfprop_quat example\n\n"
-      << "  This example uses Turing's Tensor Core operators on cutlass::Quaternion<float> data types to compute\n"
-      << "  forward convolution on tensors of layout NHWC.\n\n"
+    out << "18_turing_simt_conv2dfprop example\n\n"
+      << "  This example computes forward 2D convolution of two floating-point or quaternion NHWC tensors.\n\n"
       << "Options:\n\n"
       << "  --help               If specified, displays this usage statement.\n\n"
       << "  --n <int>            Input tensor extent N\n"
@@ -226,6 +234,7 @@ struct Options {
       << "  --s <int>            Filter extent S\n\n"
       << "  --alpha <float>      Epilogue scalar alpha\n"
       << "  --beta <float>       Epilogue scalar beta\n\n"
+      << "  --quat               If set (true), tensor entries are quaternions, scalars otherwise."
       << "  --ref-check          If set (true), reference check on the host is computed\n"
       << "  --perf-check         If set (true), performance is measured.\n"
       << "  --benchmark          If set (true), performance benchmarking on several layers and batch-size.\n"
@@ -234,8 +243,8 @@ struct Options {
       << "  --tag <string>       String to replicate across the first column in the results table\n";
 
     out << "\n\nExamples:\n\n"
-      << "$ ./examples/18_turing_tensorop_conv2dfprop_quat/18_turing_tensorop_conv2dfprop_quat  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
-      << "$ ./examples/18_turing_tensorop_conv2dfprop_quat/18_turing_tensorop_conv2dfprop_quat  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
+      << "$ ./examples/18_turing_simt_conv2dfprop/18_turing_simt_conv2dfprop  --n=32 --h=224 --w=224 --c=128 --k=256 --r=1 --s=1\n\n"
+      << "$ ./examples/18_turing_simt_conv2dfprop/18_turing_simt_conv2dfprop  --n=1 --h=224 --w=224 --c=32 --k=32 --r=3 --s=3 --ref-check\n\n";
 
     return out;
   }
@@ -248,17 +257,32 @@ struct Options {
       (input_size.w() + padding.w() + padding.c() - filter_size.w()) / conv_stride.column() + 1,
       filter_size.n());
   }
+
+  /// Defines a elementwise multiplication cost
+  template<typename ElementType>
+  int64_t gflops_multiplier() const;
  
   /// Compute performance in GFLOP/s
+  template<typename ElementType>
   double gflops(double runtime_s) const {
 
     // Number of multiply-adds = NPQK * CRS
-    int64_t fmas = output_size().product() * int64_t(filter_size.h() * filter_size.w() * filter_size.c());
+    int64_t fmas = gflops_multiplier<ElementType>() * output_size().product() * int64_t(filter_size.h() * filter_size.w() * filter_size.c());
     
-    // Sixteen operation per quaternion multiplication and two flops per multiply-add
-    return 16.0 * 2.0 * double(fmas) / double(1.0e9) / runtime_s;
+    // Two flops per multiply-add
+    return 2.0 * double(fmas) / double(1.0e9) / runtime_s;
   }
 };
+
+template<>
+int64_t Options::gflops_multiplier<float>() const {
+  return 1;
+}
+
+template<>
+int64_t Options::gflops_multiplier<cutlass::Quaternion<float>>() const {
+  return 16;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -311,7 +335,21 @@ struct Result {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<typename ElementType>
+ElementType make_element_from_float(float value);
+
+template<>
+float make_element_from_float(float value) {
+  return value;
+}
+
+template<>
+cutlass::Quaternion<float> make_element_from_float(float value) {
+  return cutlass::Quaternion<float>(value, value, value, value);
+}
+
 /// Runs one benchmark
+template<typename ElementType>
 Result profile_convolution(Options const &options) {
 
   Result result;
@@ -319,6 +357,17 @@ Result profile_convolution(Options const &options) {
   //
   // Allocate host-device tensors using the CUTLASS Utilities.
   //
+
+  using ElementInputA = typename Conv2DOp<ElementType>::ElementInputA;
+  using ElementInputB = typename Conv2DOp<ElementType>::ElementInputB;
+  using ElementOutput = typename Conv2DOp<ElementType>::ElementOutput;
+  using ElementOutput = typename Conv2DOp<ElementType>::ElementOutput;
+  using LayoutInputA = typename Conv2DOp<ElementType>::LayoutInputA;
+  using LayoutInputB = typename Conv2DOp<ElementType>::LayoutInputB;
+  using LayoutOutput = typename Conv2DOp<ElementType>::LayoutOutput;
+  using LayoutOutput = typename Conv2DOp<ElementType>::LayoutOutput;
+  using ElementComputeEpilogue = typename Conv2DOp<ElementType>::ElementComputeEpilogue;
+  using ElementAccumulator = typename Conv2DOp<ElementType>::ElementAccumulator;
 
   cutlass::HostTensor<ElementInputA, LayoutInputA> tensor_a(options.input_size);
   cutlass::HostTensor<ElementInputB, LayoutInputB> tensor_b(options.filter_size);
@@ -333,16 +382,16 @@ Result profile_convolution(Options const &options) {
   cutlass::reference::host::TensorFillRandomUniform(
       tensor_a.host_view(),
       1,
-      ElementInputA(7,7,7,7),
-      ElementInputA(-8,-8,-8,-8),
+      make_element_from_float<ElementInputA>(7),
+      make_element_from_float<ElementInputA>(-8),
       0);
 
   // Fill tensor B on host with uniform-distribution random data
   cutlass::reference::host::TensorFillRandomUniform(
       tensor_b.host_view(),
       1,
-      ElementInputB(7,7,7,7),
-      ElementInputB(-8,-8,-8,-8),
+      make_element_from_float<ElementInputB>(7),
+      make_element_from_float<ElementInputB>(-8),
       0);
 
   // Fill tensor C on host with zeros
@@ -382,6 +431,7 @@ Result profile_convolution(Options const &options) {
 
   // Construct ImplicitGemm::Argument structure with conv2d 
   // problem size, data pointers, and epilogue values
+  using ImplicitGemm = typename Conv2DOp<ElementType>::ImplicitGemm;
   typename ImplicitGemm::Arguments arguments{
     problem_size,
     tensor_a.device_ref(),
@@ -467,7 +517,7 @@ Result profile_convolution(Options const &options) {
 
     std::stringstream ss;
 
-    ss << "18_tensor_conv_workspace_conv2dfprop_quat_"
+    ss << "19_tensor_conv_workspace_conv2dfprop_f32_"
       << options.input_size.n() << "x" << options.input_size.h() << "x" << options.input_size.w() << "x" << options.input_size.c() 
       << "_"
       << options.filter_size.n() << "x" << options.filter_size.h() << "x" << options.filter_size.w() << "x" << options.filter_size.c() 
@@ -493,6 +543,11 @@ Result profile_convolution(Options const &options) {
   //
 
   if (options.measure_performance) {
+
+    // update tensor contents on GPU to avoid impact on runtime (happens with --ref-check option)
+    tensor_a.sync_device();
+    tensor_b.sync_device();
+    tensor_c.sync_device();
 
     cudaEvent_t events[2];
     
@@ -541,7 +596,7 @@ Result profile_convolution(Options const &options) {
 
     // Print average runtime and GFLOPs.
     result.runtime_ms = double(runtime_ms) / double(options.iterations);
-    result.gflops = options.gflops(result.runtime_ms / 1000.0);
+    result.gflops = options.gflops<ElementType>(result.runtime_ms / 1000.0);
 
     // Cleanup
     for (auto event : events) {
@@ -555,23 +610,6 @@ Result profile_convolution(Options const &options) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char const **args) {
-
-  // Turing Tensor Core operations exposed with mma.sync are first available in CUDA 10.2.
-  //
-  // CUTLASS must be compiled with CUDA 10.2 Toolkit to run these examples.
-  if (!(__CUDACC_VER_MAJOR__ > 10 || (__CUDACC_VER_MAJOR__ == 10 && __CUDACC_VER_MINOR__ >= 2))) {
-    std::cerr << "Turing Tensor Core operations must be compiled with CUDA 10.2 Toolkit or later." << std::endl;
-    return 0;
-  }
-
-  cudaDeviceProp props;
-  CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
-
-  if (!(props.major > 7 || (props.major == 7 && props.minor >= 5))) {
-    std::cerr << "Turing Tensor Ops must be run on a machine with compute capability at least 75."
-              << std::endl;
-    return 0;
-  }
 
   Options options;
   
@@ -618,7 +656,13 @@ int main(int argc, char const **args) {
 
         options.update({N, layer.h, layer.w, layer.c}, {layer.k, layer.r, layer.s, layer.c});
 
-        Result result = profile_convolution(options);
+        Result result;
+        if (options.use_quaternions) {
+          result = profile_convolution<cutlass::Quaternion<float>>(options);
+        }
+        else {
+          result = profile_convolution<float>(options);
+        }
         result.print(std::cout, idx, options) << std::endl;
       }
 
@@ -632,8 +676,14 @@ int main(int argc, char const **args) {
       std::cerr << "Invalid problem." << std::endl;
       return -1;
     }
-
-    Result result = profile_convolution(options);
+    
+    Result result;
+    if (options.use_quaternions) {
+      result = profile_convolution<cutlass::Quaternion<float>>(options);
+    }
+    else {
+      result = profile_convolution<float>(options);
+    }
 
     Result::print_header(std::cout, options) << std::endl;
     result.print(std::cout, 1, options) << std::endl;
@@ -643,6 +693,3 @@ int main(int argc, char const **args) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-

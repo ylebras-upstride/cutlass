@@ -22,7 +22,7 @@
 
 
 cutlass_example_add_executable(
-  20_conv2d_fprop_quat
+  19_conv2d_fprop_quat
   conv2dfprop.cu
   )
 

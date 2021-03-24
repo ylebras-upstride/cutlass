@@ -83,9 +83,8 @@ foreach(EXAMPLE
   15_ampere_sparse_tensorop_gemm
   16_ampere_tensorop_conv2dfprop
   17_fprop_per_channel_bias
-  18_turing_tensorop_conv2dfprop_quat
-  19_turing_tensorop_conv2dfprop_f32
-  20_conv_fprop_quat
+  18_turing_simt_conv2dfprop
+  19_conv_fprop_quat
   )
 
   add_subdirectory(${EXAMPLE})
